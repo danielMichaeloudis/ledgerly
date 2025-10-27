@@ -1,80 +1,108 @@
 const transactionRows = document.getElementsByClassName("transaction-row");
 
 for (row of transactionRows) {
-    row.onclick = (event) => {
-        const container = event.currentTarget.closest(".transaction-container");
-        const dropdown = container.querySelector(".dropdown");
+  row.onclick = (event) => {
+    const container = event.currentTarget.closest(".transaction-container");
+    const dropdown = container.querySelector(".dropdown");
 
-        const isOpen = container.classList.toggle("open");
+    const isOpen = container.classList.toggle("open");
 
-        if (isOpen) {
-            dropdown.style.maxHeight = dropdown.scrollHeight + "px";
-            dropdown.style.opacity = "1";
-        } else {
-            dropdown.style.maxHeight = "0";
-            dropdown.style.opacity = "0";
-        }
-    };
+    if (isOpen) {
+      dropdown.style.maxHeight = dropdown.scrollHeight + "px";
+      dropdown.style.opacity = "1";
+    } else {
+      dropdown.style.maxHeight = "0";
+      dropdown.style.opacity = "0";
+    }
+  };
 }
 
 const addContainer = document.getElementById("add-container");
 const addBtn = document.getElementById("add-btn");
 
 addBtn.onmouseover = (event) => {
-    event.currentTarget.parentElement.classList.add("open");
+  event.currentTarget.parentElement.classList.add("open");
 };
 
 addContainer.onmouseleave = (event) => {
-    event.currentTarget.classList.remove("open");
+  event.currentTarget.classList.remove("open");
 };
 
 const addTransactionBtn = document.getElementById("add-transaction-btn");
 
 addTransactionBtn.onclick = () => {
-    fetch("/components/add_single_transaction")
-        .then((res) => res.text())
-        .then((html) => {
-            addHTML(html, "transaction");
-            //default date picker to now
-            document.getElementById("transaction-date").valueAsDate =
-                new Date();
-            document.getElementById("close-transaction").onclick = () => {
-                var els = document.getElementsByClassName(
-                    "added-by-transaction"
-                );
+  fetch("/components/add_single_transaction")
+    .then((res) => res.text())
+    .then((html) => {
+      addHTML(html, "transaction");
+      //default date picker to now
+      document.getElementById("transaction-date").valueAsDate = new Date();
+      document.getElementById("close-transaction").onclick = () => {
+        var els = document.getElementsByClassName("added-by-transaction");
 
-                while (els[0]) {
-                    els[0].parentNode.removeChild(els[0]);
-                }
-            };
-            document
-                .getElementById("add-single-transaction")
-                .classList.add("shown");
-        });
+        while (els[0]) {
+          els[0].parentNode.removeChild(els[0]);
+        }
+      };
+      document.getElementById("add-single-transaction").classList.add("shown");
+    });
+};
+
+const importTransactionBtn = document.getElementById(
+  "import-transaction-file-input"
+);
+
+importTransactionBtn.onchange = (e) => {
+  let file = e.target.files[0];
+
+  let reader = new FileReader();
+  reader.readAsText(file, "UTF-8");
+
+  reader.onload = (readerEvent) => {
+    let content = readerEvent.target.result;
+    fetch("/components/import_transactions", {
+      method: "POST",
+      body: content,
+      headers: {
+        authorization: "Bearer " + getCookie("token"),
+        "Content-Type": "application/json",
+      },
+    })
+      .then((res) => res.text())
+      .then((html) => {
+        addHTML(html, "transaction");
+        document.getElementById("close-transaction").onclick = () => {
+          var els = document.getElementsByClassName("added-by-transaction");
+
+          while (els[0]) {
+            els[0].parentNode.removeChild(els[0]);
+          }
+        };
+      })
+      .catch((e) => console.error(e));
+  };
 };
 
 function editTransaction(event) {
-    event.preventDefault();
-    const row = event.currentTarget.closest(".transaction-row");
-    fetch("/components/edit_transaction", {
-        method: "POST",
-        body: JSON.stringify(row.getElementsByClassName("uuid")[0].innerText),
-        headers: {
-            authorization: "Bearer " + getCookie("token"),
-            "Content-Type": "application/json",
-        },
-    })
-        .then((res) => res.text())
-        .then((html) => {
-            addHTML(html, "transaction");
-            document.getElementById("close-transaction").onclick = () => {
-                var els = document.getElementsByClassName(
-                    "added-by-transaction"
-                );
+  event.preventDefault();
+  const row = event.currentTarget.closest(".transaction-row");
+  fetch("/components/edit_transaction", {
+    method: "POST",
+    body: JSON.stringify(row.getElementsByClassName("uuid")[0].innerText),
+    headers: {
+      authorization: "Bearer " + getCookie("token"),
+      "Content-Type": "application/json",
+    },
+  })
+    .then((res) => res.text())
+    .then((html) => {
+      addHTML(html, "transaction");
+      document.getElementById("close-transaction").onclick = () => {
+        var els = document.getElementsByClassName("added-by-transaction");
 
-                while (els[0]) {
-                    els[0].parentNode.removeChild(els[0]);
-                }
-            };
-        });
+        while (els[0]) {
+          els[0].parentNode.removeChild(els[0]);
+        }
+      };
+    });
 }

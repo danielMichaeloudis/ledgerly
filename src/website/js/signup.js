@@ -58,7 +58,7 @@ form.onsubmit = (event) => {
             d.setTime(d.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days
             let expires = "expires=" + d.toUTCString();
             document.cookie = "token=" + res + ";" + expires + ";path=/";
-            document.location.href = "/home";
+            document.location.href = "/";
         });
     });
 };

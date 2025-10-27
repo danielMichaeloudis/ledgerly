@@ -1,17 +1,18 @@
 use axum::Json;
 use css_helper::Css;
-use maud::{html, Markup};
+use maud::{html, Markup, PreEscaped};
+use serde_json::json;
 use uuid::Uuid;
 
 use crate::{
     models::{Item, Transaction},
-    website::components::close_svg,
+    website::components::{close_svg, pagination::pagination},
 };
 
 pub fn transaction_popup(
     title: Option<&str>,
     js_with_submit: Option<&str>,
-    transactions: Option<&[(Uuid, Transaction)]>,
+    transactions: Option<&[(Option<Uuid>, Transaction)]>,
 ) -> Markup {
     let title = title.unwrap_or("New Transaction");
     let js_with_submit = match js_with_submit {
@@ -29,7 +30,7 @@ pub fn transaction_popup(
 
     if let Some(transactions) = transactions {
         if transactions.len() == 1 {
-            uuid = Some(&transactions[0].0);
+            uuid = transactions[0].0;
             vendor = Some(&transactions[0].1.vendor);
             buyer = Some(&transactions[0].1.buyer);
             cost = Some(&transactions[0].1.cost);
@@ -38,14 +39,29 @@ pub fn transaction_popup(
             items = Some(&transactions[0].1.items);
         }
     }
+    let json =
+        json!(transactions.map(|t| t.into_iter().map(|(_, t)| t).collect::<Vec<&Transaction>>()));
+    let transaction_json = json.to_string();
+
+    //println!("{transaction_json}");
 
     html! {
-        (transaction_css())
-        script src="/items.js" defer{}
+        script src="/js/items.js" defer{}
         (js_with_submit)
         div #"transaction" ."bg-1" {
+            script {
+                (PreEscaped(format!(
+                    "window.transactions = {};",
+                    transaction_json
+                )))
+            }
             h1 {(title)}
             button #"close-transaction" ."close-btn" {(close_svg("40px", "40px"))}
+            @if let Some(transactions) = transactions {
+                @if transactions.len() > 1 {
+                    (pagination(1, transactions.len()))
+                }
+            }
             form #"transaction-form" {
                 input #"transaction-uuid" ."uuid" readonly value=[uuid];
                 input #"transaction-vendor" name="vendor" ."styled-input" type="text" placeholder="Vendor *" value=[vendor];
@@ -62,9 +78,18 @@ pub fn transaction_popup(
                     }
                 }
                 button #"add-item" ."styled-button" type="button" {"Add Item"}
-                button #"submit-transaction" ."styled-input"."styled-button" type="button" {"Submit Transaction"};
-                @if transactions.is_some() {
-                    button #"remove-transaction" ."styled-input"."styled-button" type="button" {"Remove Transaction"};
+                @if transactions.is_none() {
+                    button #"submit-transaction" ."styled-input"."styled-button" type="button" {"Submit Transaction"};
+                }
+                @if let Some(transactions) = transactions {
+                    @if transactions.len() == 1 {
+                        button #"submit-transaction" ."styled-input"."styled-button" type="button" {"Submit Transaction"};
+                        // Disabled for multiple transactions until bugs can be resolved
+                        button #"remove-transaction" ."styled-input"."styled-button" type="button" {"Remove Transaction"};
+                    }
+                    @if transactions.len() > 1 {
+                        button #"submit-transactions" ."styled-input"."styled-button" type="button" {"Submit Transactions"};
+                    }
                 }
             }
         }
@@ -89,7 +114,7 @@ pub fn item_row(Json(item): Json<Option<Item>>) -> Markup {
     }
 }
 
-fn transaction_css() -> Css {
+pub fn transaction_css() -> Css {
     Css::from(
         r#"
         #transaction {
@@ -141,11 +166,7 @@ fn transaction_css() -> Css {
             height: 30px;
             padding: 0;
         }
-
-        #transaction * {
-            margin: 0.75rem;
-        }
-
+        
         .add-item-row * {
             margin: 0.5rem;
         }

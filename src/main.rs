@@ -1,3 +1,4 @@
+#![deny(unused_crate_dependencies)]
 mod api;
 mod api_bridge;
 mod models;
@@ -14,12 +15,11 @@ use axum::{
     Json, Router,
 };
 use serde::Serialize;
-use serde_json::json;
 use sqlx::{migrate::Migrator, postgres::PgPoolOptions, Connection, PgConnection, Pool, Postgres};
+use tower_http::services::ServeDir;
 use utils::AppState;
 use website::website_routes;
 
-use crate::website::js_routes;
 
 static MIGRATOR: Migrator = sqlx::migrate!();
 
@@ -27,16 +27,16 @@ static MIGRATOR: Migrator = sqlx::migrate!();
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
 
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    let jwt_base64 = std::env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set");
-    let pool = create_and_setup_db(&db_url).await?;
+    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set.\n");
+    let jwt_base64 = std::env::var("JWT_SECRET_KEY").expect("JWT_SECRET_KEY must be set.\n");
+    let pool = create_and_setup_db(&db_url).await.expect("Failed to setup database.\n");
 
     let router = Router::new()
         .route("/ping", get(ping))
         .route("/version", get(version))
         .nest("/api", api_routes())
         .merge(website_routes())
-        .merge(js_routes())
+        .nest_service("/js", ServeDir::new("./src/website/js"))
         .layer(
             tower_http::cors::CorsLayer::new()
                 //.allow_origin("http://localhost:3000".parse::<HeaderValue>().unwrap())
@@ -61,7 +61,7 @@ async fn create_and_setup_db(db_url: &str) -> Result<Pool<Postgres>, sqlx::Error
     url.set_path("/postgres");
     let postgres_url = url.as_str();
 
-    let mut conn = PgConnection::connect(postgres_url).await?;
+    let mut conn = PgConnection::connect(postgres_url).await.expect("Failed to connect to Database.\n");
 
     let db_exists = sqlx::query_scalar::<_, bool>(
         "SELECT EXISTS(SELECT 1 FROM pg_database WHERE datname = $1)",

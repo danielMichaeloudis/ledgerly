@@ -13,7 +13,7 @@ use crate::{
 pub fn filter_section(query_params: &Query<FilterParams>) -> Markup {
     html! {
         (filter_css())
-        script src="/filters.js" defer{}
+        script src="/js/filters.js" defer{}
         div #"filters" ."bg-1" {
             div #"filters-header" {
                 h3 {"Filters"}

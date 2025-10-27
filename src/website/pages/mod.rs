@@ -1,4 +1,4 @@
-mod home;
+mod analytics;
 mod login;
 mod signup;
 mod table;
@@ -7,7 +7,7 @@ use std::collections::HashMap;
 
 use axum::extract::{Query, Request};
 use chrono::NaiveDate;
-pub use home::home_page;
+pub use analytics::analytics_page;
 pub use login::login_page;
 use maud::{html, Markup, DOCTYPE};
 use serde::{Deserialize, Serialize};
@@ -19,7 +19,7 @@ use crate::{
     api_bridge::ApiBridge,
     models::Transaction,
     website::{
-        components::{filter_transactions, header, navigation_bar},
+        components::{filter_transactions, header, navigation_bar, transaction_css},
         get_cookie,
     },
 };
@@ -70,8 +70,9 @@ pub async fn authorised_page(
 
     let wrapped = html! {
         (authorised_page_css())
-        script src="/utils.js" defer {};
-        script src="/authorsied_page_header.js" defer {};
+        (transaction_css())
+        script src="/js/utils.js" defer {};
+        script src="/js/authorsied_page_header.js" defer {};
         (header())
         #"spending-header" ."bg-1" {
             h1 {"Total Spent: " h1 #total {(format!("£{total:0.2}"))}} br;

@@ -5,11 +5,11 @@ use crate::website::Css;
 pub fn navigation_bar() -> Markup {
     html! {
         (nav_css())
-        script src="/nav.js" defer{}
+        script src="/js/nav.js" defer{}
         #"nav-ext"{
             #"nav-container" {
-                a #"home-btn" ."nav-button" href="/" {"Analytics"}
-                a #"table-btn" ."nav-button" href="/table" {"Table"}
+                a #"table-btn" ."nav-button" href="/" {"Table"}
+                a #"home-btn" ."nav-button" href="/analytics" {"Analytics"}
             }
         }
     }

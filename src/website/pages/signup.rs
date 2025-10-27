@@ -23,7 +23,7 @@ pub fn signup_page() -> Markup {
                     "Already have an account? "
                     a href="/login" {"Log in"}
                 }
-                script src="/signup.js" defer {};
+                script src="/js/signup.js" defer {};
 
             }
         }

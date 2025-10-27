@@ -9,7 +9,7 @@ use uuid::Uuid;
 use crate::{
     models::Transaction,
     website::{
-        components::{add_transaction_svg, dropdown_arrow_svg, edit_svg, filter_section},
+        components::{add_transaction_svg, dropdown_arrow_svg, edit_svg, filter_section, upload_file_svg},
         pages::FilterParams,
     },
 };
@@ -20,7 +20,7 @@ pub fn table_page(
 ) -> Markup {
     let dates = get_days_data(transaction_map);
     html! {
-        script src="/table.js" defer {}
+        script src="/js/table.js" defer {}
         (table_css())
         div #"adding-popup" {}
         div #"add-container" {
@@ -29,6 +29,10 @@ pub fn table_page(
                 button #"add-transaction-btn" ."bg-1"{
                     (add_transaction_svg())
                 }
+                button #"import-transaction-btn" ."bg-1" onclick="document.getElementById('import-transaction-file-input').click();"{
+                    (upload_file_svg())
+                }
+                input id="import-transaction-file-input" type="file" name="name" style="display: none;";
             }
         }
         (filter_section(query_params))

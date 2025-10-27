@@ -1,5 +1,4 @@
 mod components;
-mod js;
 mod pages;
 
 use std::fs;
@@ -19,9 +18,8 @@ use crate::{
     api_bridge::ApiBridge,
     models::Item,
     website::{
-        components::{add_transaction, edit_transaction, item_row},
-        js::get_js_file,
-        pages::{authorised_page, home_page, signup_page, table_page},
+        components::{add_transaction, edit_transaction, import_transactions, item_row},
+        pages::{analytics_page, authorised_page, signup_page, table_page},
     },
     AppState,
 };
@@ -34,12 +32,12 @@ pub(crate) fn website_routes() -> Router<AppState> {
 
     Router::new()
         .route(
-            "/home",
-            get(async |req: Request| authorised_page(home_page, req).await),
+            "/",
+            get(async |req: Request| authorised_page(table_page, req).await),
         )
         .route(
-            "/",
-            get(async |req: Request| authorised_page(home_page, req).await),
+            "/analytics",
+            get(async |req: Request| authorised_page(analytics_page, req).await),
         )
         .route(
             "/table",
@@ -50,38 +48,13 @@ pub(crate) fn website_routes() -> Router<AppState> {
             get(async || add_transaction()),
         )
         .route("/components/edit_transaction", post(edit_transaction))
+        .route("/components/import_transactions", post(import_transactions))
         .route(
             "/components/item-row",
             post(async |item: Json<Option<Item>>| item_row(item)),
         )
         .route_layer(middleware::from_fn(auth))
         .merge(login_routes)
-}
-
-pub(crate) fn js_routes() -> Router<AppState> {
-    let paths = fs::read_dir("./src/website/js/").unwrap();
-    let mut r = Router::new();
-    for path in paths {
-        r = if let Ok(path) = path {
-            if path.path().is_file()
-                && path
-                    .path()
-                    .extension()
-                    .is_some_and(|e| e.to_str() == Some("js"))
-            {
-                if let Ok(file_name) = path.file_name().into_string() {
-                    r.route(&format!("/{file_name}"), get(get_js_file(&file_name)))
-                } else {
-                    r
-                }
-            } else {
-                r
-            }
-        } else {
-            r
-        };
-    }
-    r
 }
 
 async fn auth(req: Request, next: Next) -> Result<Response<Body>, (StatusCode, String)> {
@@ -151,7 +124,6 @@ fn redirect_to_login(_from: &str) -> Response<Body> {
 fn redirect_to_home(_from: &str) -> Response<Body> {
     let mut res = Response::new(Body::empty());
     *res.status_mut() = StatusCode::FOUND;
-    res.headers_mut()
-        .append("Location", "/home".parse().unwrap());
+    res.headers_mut().append("Location", "/".parse().unwrap());
     res
 }

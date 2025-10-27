@@ -14,12 +14,12 @@ pub async fn edit_transaction(headers: HeaderMap, Json(transaction_uuid): Json<U
                 .get_transaction_by_uuid(&token, transaction_uuid)
                 .await
                 .ok()
-                .map(|t| vec![(transaction_uuid, t)]),
+                .map(|t| vec![(Some(transaction_uuid), t)]),
             None => None,
         },
         Err(_) => None,
     };
     html! {
-        (transaction_popup(Some("Edit Transaction"), Some("/edit_transaction.js"), transaction.as_deref()))
+        (transaction_popup(Some("Edit Transaction"), Some("/js/edit_transaction.js"), transaction.as_deref()))
     }
 }

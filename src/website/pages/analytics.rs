@@ -9,7 +9,7 @@ use crate::{
     website::{components::filter_section, pages::FilterParams},
 };
 
-pub fn home_page(
+pub fn analytics_page(
     _transaction_list: &HashMap<Uuid, Transaction>,
     query_params: &Query<FilterParams>,
 ) -> Markup {
